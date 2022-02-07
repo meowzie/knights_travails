@@ -2,7 +2,12 @@
 
 # Creates chess board
 class Board
-  def initialize; end
+  attr_accessor :positions
+
+  def initialize
+    @positions = []
+    8.times { |row| 8.times { |column| @positions << [row, column] } }
+  end
 end
 
 # Creates positions on the chess board
