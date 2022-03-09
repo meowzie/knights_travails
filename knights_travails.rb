@@ -33,8 +33,27 @@ class Board
      [row - 2, column - 1]]
   end
 
-  def path_builder
-    @squares[0]
+  def move_legitimizer(position)
+    potential = move_finder(position)
+    squares = []
+    potential.each do |coordinate|
+      squares << find(coordinate)
+    end
+    squares
+  end
+
+  def move_assigner(position)
+    square = find(position)
+    legal = move_legitimizer(position)
+
+    square.ruv = legal[0]
+    square.ruh = legal[1]
+    square.rdv = legal[2]
+    square.rdh = legal[3]
+    square.luv = legal[4]
+    square.luh = legal[5]
+    square.ldh = legal[6]
+    square.ldv = legal[7]
   end
 end
 
