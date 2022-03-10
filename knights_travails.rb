@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# require 'pry-byebug'
+require 'pry-byebug'
 
 # Creates chess board
 class Board
@@ -55,6 +55,22 @@ class Board
     square.ldh = legal[6]
     square.ldv = legal[7]
   end
+
+  def tree_builder(current, target, visited = [])
+    return if current == target || current.nil? || visited.include?(current)
+
+    move_assigner(current)
+    square = find(current)
+
+    tree_builder(square.ruv.position, target, visited + [current])
+    tree_builder(square.ruh.position, target, visited + [current])
+    tree_builder(square.rdv.position, target, visited + [current])
+    tree_builder(square.rdh.position, target, visited + [current])
+    tree_builder(square.luv.position, target, visited + [current])
+    tree_builder(square.luh.position, target, visited + [current])
+    tree_builder(square.ldh.position, target, visited + [current])
+    tree_builder(square.ldv.position, target, visited + [current])
+  end
 end
 
 # Creates squares that are contained within the knight's tree of moves
@@ -78,5 +94,12 @@ class Square
   end
 end
 
-# board = Board.new
-# binding.pry
+# Adds a #position method to prevent errors in the Board#tree_builder function
+class NilClass
+  def position
+    nil
+  end
+end
+
+board = Board.new
+board.tree_builder([0, 0], [2, 1])
