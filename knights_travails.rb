@@ -1,26 +1,8 @@
 # frozen_string_literal: true
 
-require 'pry-byebug'
-
 # Creates chess board
 class Board
-  attr_accessor :squares
-
-  def initialize
-    @squares = []
-    8.times { |row| 8.times { |column| @squares << Square.new([row, column]) } }
-  end
-
-  def find(position)
-    result = nil
-    squares.each do |square|
-      if square.position == position
-        result = square
-        break
-      end
-    end
-    result
-  end
+  def initialize; end
 
   def move_finder(position, row = position[0], column = position[1])
     [[row + 2, column + 1],
@@ -35,71 +17,36 @@ class Board
 
   def move_legitimizer(position)
     potential = move_finder(position)
-    squares = []
-    potential.each do |coordinate|
-      squares << find(coordinate)
-    end
-    squares
+    potential.map do |coordinates|
+      coordinates if coordinates.none? { |coordinate| coordinate > 7 || coordinate.negative? }
+    end.compact
   end
 
-  def move_assigner(position)
-    square = find(position)
-    legal = move_legitimizer(position)
+  def path_slicer(visited, current)
+    return visited if move_legitimizer(visited[visited.find_index(current) - 1]).include?(current)
 
-    square.ruv = legal[0]
-    square.ruh = legal[1]
-    square.rdv = legal[2]
-    square.rdh = legal[3]
-    square.luv = legal[4]
-    square.luh = legal[5]
-    square.ldh = legal[6]
-    square.ldv = legal[7]
+    parent = visited.find { |item| move_legitimizer(item).include?(current) }
+    visited = visited[0..visited.find_index(parent)].uniq + visited[visited.find_index(current)...visited.length].uniq
+    path_slicer(visited, parent)
   end
 
-  def tree_builder(current, target, visited = [])
-    return if current == target || current.nil? || visited.include?(current)
+  def tree_builder(current, target, queue = [], visited = [])
+    visited << current
+    moves = move_legitimizer(current)
+    return path_slicer(visited, current) + [target] if moves.include?(target)
 
-    move_assigner(current)
-    square = find(current)
-
-    tree_builder(square.ruv.position, target, visited + [current])
-    tree_builder(square.ruh.position, target, visited + [current])
-    tree_builder(square.rdv.position, target, visited + [current])
-    tree_builder(square.rdh.position, target, visited + [current])
-    tree_builder(square.luv.position, target, visited + [current])
-    tree_builder(square.luh.position, target, visited + [current])
-    tree_builder(square.ldh.position, target, visited + [current])
-    tree_builder(square.ldv.position, target, visited + [current])
+    moves.each { |move| queue << move }
+    next_move = queue.shift
+    tree_builder(next_move, target, queue, visited)
   end
-end
 
-# Creates squares that are contained within the knight's tree of moves
-class Square
-  attr_accessor :position, :ruv, :ruh, :rdv, :rdh, :luv, :luh, :ldh, :ldv
+  def moves_tree(initial, target)
+    tree = tree_builder(initial, target)
 
-  def initialize(position)
-    @position = position
-    # each of the following denotes one of the square's possible chidren
-    # r means it's to the right of the square, l to the left
-    # u means it's above the square, d below
-    # v means the distance to the move is 2 squares vertical and 1 horizontal, h is 1 vertical and 2 horizontal
-    @ruv = nil
-    @ruh = nil
-    @rdv = nil
-    @rdh = nil
-    @luv = nil
-    @luh = nil
-    @ldh = nil
-    @ldv = nil
-  end
-end
-
-# Adds a #position method to prevent errors in the Board#tree_builder function
-class NilClass
-  def position
-    nil
+    puts "You made it in #{tree.length} moves. Here's your path:"
+    tree.each { |step| puts step.to_s }
   end
 end
 
 board = Board.new
-board.tree_builder([0, 0], [2, 1])
+board.moves_tree([0, 0], [7, 3])
